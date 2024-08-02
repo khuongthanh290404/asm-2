@@ -13,7 +13,7 @@ import User from "./pages/admin/User";
 import Category from "./pages/admin/Category";
 // import CategoryForm from "./pages/CategoryForm";
 import OrderHistoryPage from "./components/Orderhistory";
-// import AdminOrdersPage from './pages/admin/Oder';
+import AdminOrdersPage from "./pages/admin/Oder";
 
 function App() {
   return (
@@ -26,8 +26,7 @@ function App() {
           <Route path="/admin/update/:id" element={<ProductForm />} />
           <Route path="/admin/user" element={<User />} />
           <Route path="/admin/category" element={<Category />} />
-          {/* <Route path="/admin/order" element={<AdminOrdersPage />} /> */}
-
+          <Route path="/admin/order" element={<AdminOrdersPage />} />
 
           {/* <Route path="/admin/category/add" element={<CategoryForm />} /> */}
         </Route>

@@ -14,10 +14,19 @@ const CartPage = () => {
     name: "",
     address: "",
     phone: "",
+    email: "", // Thêm email của khách hàng
   });
 
   useEffect(() => {
     localStorage.setItem("cart", JSON.stringify(cart));
+
+    const user = JSON.parse(localStorage.getItem("user") || "{}");
+    if (user && user.email) {
+      setCustomerInfo((prevInfo) => ({
+        ...prevInfo,
+        email: user.email,
+      }));
+    }
   }, [cart]);
 
   const removeFromCart = (id: string | number) => {
@@ -37,7 +46,12 @@ const CartPage = () => {
       return;
     }
 
-    if (!customerInfo.name || !customerInfo.address || !customerInfo.phone) {
+    if (
+      !customerInfo.name ||
+      !customerInfo.address ||
+      !customerInfo.phone ||
+      !customerInfo.email
+    ) {
       toast.error("Please fill in all customer information before ordering.");
       return;
     }
@@ -50,13 +64,14 @@ const CartPage = () => {
       items: cart,
       date: new Date().toLocaleString(),
       customerInfo,
+      status: "Pending", // Thêm trạng thái đơn hàng mặc định là Pending
     };
 
     orderHistory.push(newOrder);
     localStorage.setItem("orderHistory", JSON.stringify(orderHistory));
     setCart([]);
     localStorage.removeItem("cart");
-    setCustomerInfo({ name: "", address: "", phone: "" });
+    setCustomerInfo({ name: "", address: "", phone: "", email: "" });
     toast.success("Order placed successfully!");
   };
 
@@ -138,6 +153,14 @@ const CartPage = () => {
             placeholder="Phone"
             name="phone"
             value={customerInfo.phone}
+            onChange={handleInputChange}
+            className="form-control mb-2"
+          />
+          <input
+            type="text"
+            placeholder="Email"
+            name="email"
+            value={customerInfo.email}
             onChange={handleInputChange}
             className="form-control mb-2"
           />

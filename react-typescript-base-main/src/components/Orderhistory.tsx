@@ -10,45 +10,87 @@ interface Order {
     name: string;
     address: string;
     phone: string;
+    email: string;
   };
+  status: string; // Trạng thái đơn hàng
 }
 
 const OrderHistoryPage = () => {
   const [orderHistory, setOrderHistory] = useState<Order[]>([]);
+  const [customerEmail, setCustomerEmail] = useState<string>("");
 
   useEffect(() => {
     const savedOrderHistory = localStorage.getItem("orderHistory");
     if (savedOrderHistory) {
       setOrderHistory(JSON.parse(savedOrderHistory));
     }
+
+    const handleStorageChange = () => {
+      const updatedOrderHistory = localStorage.getItem("orderHistory");
+      if (updatedOrderHistory) {
+        setOrderHistory(JSON.parse(updatedOrderHistory));
+      }
+    };
+
+    window.addEventListener("storage", handleStorageChange);
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+    };
   }, []);
 
-  const removeItemFromOrder = (orderId: number, itemId: number | string) => {
+  const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setCustomerEmail(e.target.value);
+  };
+
+  const filteredOrderHistory = orderHistory.filter(
+    (order) => order.customerInfo.email === customerEmail
+  );
+
+  const confirmReceipt = (orderId: number) => {
     const updatedOrderHistory = orderHistory.map((order) => {
       if (order.id === orderId) {
-        const updatedItems = order.items.filter((item) => item.id !== itemId);
-        return { ...order, items: updatedItems };
+        return { ...order, status: "Delivered" }; // Cập nhật trạng thái đơn hàng
       }
       return order;
     });
 
-    const filteredOrderHistory = updatedOrderHistory.filter(
-      (order) => order.items.length > 0
-    );
+    setOrderHistory(updatedOrderHistory);
+    localStorage.setItem("orderHistory", JSON.stringify(updatedOrderHistory));
+    toast.success("Order marked as received");
 
-    setOrderHistory(filteredOrderHistory);
-    localStorage.setItem("orderHistory", JSON.stringify(filteredOrderHistory));
-    toast.success("Item removed from order successfully");
+    // Gửi thông báo cho các tab khác về sự thay đổi
+    window.dispatchEvent(new Event("storage"));
+  };
+
+  const cancelOrder = (orderId: number) => {
+    const updatedOrderHistory = orderHistory.filter(
+      (order) => order.id !== orderId
+    );
+    setOrderHistory(updatedOrderHistory);
+    localStorage.setItem("orderHistory", JSON.stringify(updatedOrderHistory));
+    toast.success("Order cancelled successfully");
   };
 
   return (
     <div className="container">
       <h2>Order History</h2>
-      {orderHistory.length === 0 ? (
-        <p>No orders found.</p>
+      <div className="mb-4">
+        <label htmlFor="email">
+          Enter your email to view your order history:
+        </label>
+        <input
+          type="email"
+          id="email"
+          value={customerEmail}
+          onChange={handleEmailChange}
+          className="form-control"
+        />
+      </div>
+      {filteredOrderHistory.length === 0 ? (
+        <p>No orders found for this email.</p>
       ) : (
         <div>
-          {orderHistory.map((order) => (
+          {filteredOrderHistory.map((order) => (
             <div key={order.id} className="order mb-4">
               <h3>Order ID: {order.id}</h3>
               <p>Date: {order.date}</p>
@@ -56,6 +98,22 @@ const OrderHistoryPage = () => {
               <p>Name: {order.customerInfo.name}</p>
               <p>Address: {order.customerInfo.address}</p>
               <p>Phone: {order.customerInfo.phone}</p>
+              <p>Email: {order.customerInfo.email}</p>
+              <p>Status: {order.status}</p>
+              {order.status !== "Delivered" && (
+                <button
+                  className="btn btn-success mb-2"
+                  onClick={() => confirmReceipt(order.id)}
+                >
+                  Confirm Receipt
+                </button>
+              )}
+              <button
+                className="btn btn-danger mb-2"
+                onClick={() => cancelOrder(order.id)}
+              >
+                Cancel Order
+              </button>
               <table className="table mt-2 mb-2 table-bordered">
                 <thead>
                   <tr>
@@ -64,7 +122,6 @@ const OrderHistoryPage = () => {
                     <th>Quantity</th>
                     <th>Price</th>
                     <th>Total</th>
-                    <th>Action</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -81,16 +138,6 @@ const OrderHistoryPage = () => {
                       <td>{item.quantity}</td>
                       <td>{item.price}</td>
                       <td>{item.price * item.quantity}</td>
-                      <td>
-                        <button
-                          className="btn btn-danger"
-                          onClick={() =>
-                            removeItemFromOrder(order.id, item.id!)
-                          }
-                        >
-                          Xóa
-                        </button>
-                      </td>
                     </tr>
                   ))}
                 </tbody>
