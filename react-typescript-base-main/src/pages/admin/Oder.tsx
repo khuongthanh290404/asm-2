@@ -17,6 +17,7 @@ interface Order {
 
 const AdminOrderPage = () => {
   const [orderHistory, setOrderHistory] = useState<Order[]>([]);
+  const [expandedOrderId, setExpandedOrderId] = useState<number | null>(null);
 
   useEffect(() => {
     const updateOrderHistory = () => {
@@ -63,71 +64,112 @@ const AdminOrderPage = () => {
     window.dispatchEvent(new Event("storage"));
   };
 
+  const toggleOrderDetails = (orderId: number) => {
+    setExpandedOrderId(expandedOrderId === orderId ? null : orderId);
+  };
+
   return (
     <div className="container">
       <h2>Admin Order Management</h2>
       {orderHistory.length === 0 ? (
         <p>No orders found.</p>
       ) : (
-        <div>
-          {orderHistory.map((order) => (
-            <div key={order.id} className="order mb-4">
-              <h3>Order ID: {order.id}</h3>
-              <p>Date: {order.date}</p>
-              <h4>Customer Information</h4>
-              <p>Name: {order.customerInfo.name}</p>
-              <p>Address: {order.customerInfo.address}</p>
-              <p>Phone: {order.customerInfo.phone}</p>
-              <p>Email: {order.customerInfo.email}</p>
-              <p>Status: {order.status}</p>
-              <select
-                value={order.status}
-                onChange={(e) => updateOrderStatus(order.id, e.target.value)}
-                className="form-control mb-2"
-              >
-                <option value="Pending">Pending</option>
-                <option value="Processing">Processing</option>
-                <option value="Shipped">Shipped</option>
-                <option value="Delivered">Delivered</option>
-                <option value="Cancelled">Cancelled</option>
-              </select>
-              <button
-                className="btn btn-danger mb-2"
-                onClick={() => deleteOrder(order.id)}
-              >
-                Delete Order
-              </button>
-              <table className="table mt-2 mb-2 table-bordered">
-                <thead>
+        <table className="table table-bordered">
+          <thead>
+            <tr>
+              <th>Order ID</th>
+              <th>Date</th>
+              <th>Customer Name</th>
+              <th>Address</th>
+              <th>Phone</th>
+              <th>Email</th>
+              <th>Status</th>
+              <th>Actions</th>
+              <th>Details</th>
+            </tr>
+          </thead>
+          <tbody>
+            {orderHistory.map((order) => (
+              <React.Fragment key={order.id}>
+                <tr>
+                  <td>{order.id}</td>
+                  <td>{order.date}</td>
+                  <td>{order.customerInfo.name}</td>
+                  <td>{order.customerInfo.address}</td>
+                  <td>{order.customerInfo.phone}</td>
+                  <td>{order.customerInfo.email}</td>
+                  <td>
+                    <select
+                      value={order.status}
+                      onChange={(e) =>
+                        updateOrderStatus(order.id, e.target.value)
+                      }
+                      className="form-control"
+                    >
+                      <option value="Pending">Pending</option>
+                      <option value="Processing">Processing</option>
+                      <option value="Shipped">Shipped</option>
+                      <option value="Delivered">Delivered</option>
+                      <option value="Cancelled">Cancelled</option>
+                    </select>
+                  </td>
+                  <td>
+                    <button
+                      className="btn btn-danger"
+                      onClick={() => deleteOrder(order.id)}
+                    >
+                      Delete Order
+                    </button>
+                  </td>
+                  <td>
+                    <button
+                      className="btn btn-info"
+                      onClick={() => toggleOrderDetails(order.id)}
+                    >
+                      {expandedOrderId === order.id
+                        ? "Hide Details"
+                        : "Show Details"}
+                    </button>
+                  </td>
+                </tr>
+                {expandedOrderId === order.id && (
                   <tr>
-                    <th>Product</th>
-                    <th>Image</th>
-                    <th>Quantity</th>
-                    <th>Price</th>
-                    <th>Total</th>
+                    <td colSpan={9}>
+                      <table className="table table-bordered">
+                        <thead>
+                          <tr>
+                            <th>Product</th>
+                            <th>Image</th>
+                            <th>Quantity</th>
+                            <th>Price</th>
+                            <th>Total</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {order.items.map((item) => (
+                            <tr key={item.id}>
+                              <td>{item.title}</td>
+                              <td>
+                                <img
+                                  width={50}
+                                  src={item.thumbnail}
+                                  alt={item.title}
+                                />
+                              </td>
+                              <td>{item.quantity}</td>
+                              <td>{item.price}</td>
+                              <td>{item.price * item.quantity}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </td>
                   </tr>
-                </thead>
-                <tbody>
-                  {order.items.map((item) => (
-                    <tr key={item.id}>
-                      <td>{item.title}</td>
-                      <td>
-                        <img
-                          width={100}
-                          src={item.thumbnail}
-                          alt={item.title}
-                        />
-                      </td>
-                      <td>{item.quantity}</td>
-                      <td>{item.price}</td>
-                      <td>{item.price * item.quantity}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ))}
-        </div>
+                )}
+              </React.Fragment>
+            ))}
+          </tbody>
+        </table>
       )}
     </div>
   );
